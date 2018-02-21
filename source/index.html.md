@@ -2,238 +2,228 @@
 title: API Reference
 
 language_tabs: # must be one of https://git.io/vQNgJ
-  - shell
-  - ruby
-  - python
-  - javascript
+	- shell
 
 toc_footers:
-  - <a href='#'>Sign Up for a Developer Key</a>
-  - <a href='https://github.com/lord/slate'>Documentation Powered by Slate</a>
-
-includes:
-  - errors
+	- <a href='https://nucleus.sh/signup'>Sign Up for a Developer Key</a>
+	- <a href='https://github.com/vincelwt/electron-nucleus'>Node module documentation</a>
 
 search: true
 ---
 
 # Introduction
 
-Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.
+Welcome to the Nucleus API!
+You can use this API to work with licenses and policies.
 
-We have language bindings in Shell, Ruby, and Python! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
+Something is missing? Would like to see something more? 
+-> hello@nucleus.sh
 
-This example API documentation page was created with [Slate](https://github.com/lord/slate). Feel free to edit it and use it as a base for your own API's documentation.
 
 # Authentication
 
 > To authorize, use this code:
 
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-```
 
 ```shell
 # With shell, you can just pass the correct header with each request
 curl "api_endpoint_here"
-  -H "Authorization: meowmeowmeow"
+	-H "Authorization: your_access_token"
 ```
 
-```javascript
-const kittn = require('kittn');
 
-let api = kittn.authorize('meowmeowmeow');
-```
-
-> Make sure to replace `meowmeowmeow` with your API key.
-
-Kittn uses API keys to allow access to the API. You can register a new Kittn API key at our [developer portal](http://example.com/developers).
+> Make sure to replace `your_access_token` with your unique access token available in your [account dashboard](https://nucleus.sh/account).
 
 Kittn expects for the API key to be included in all API requests to the server in a header that looks like the following:
 
-`Authorization: meowmeowmeow`
+`Authorization: your_access_token`
+
+You may also send it in the body of a POST request as the parameter `token`.
 
 <aside class="notice">
-You must replace <code>meowmeowmeow</code> with your personal API key.
+You must replace <code>your_access_token</code> with your account's access token.
 </aside>
 
-# Kittens
+# Policies
 
-## Get All Kittens
+A policy defines how a license can be used. For example, it allows you to configure its expiration delay, how many machines the license should work, etc.. and can be used inside your app to separate licenses types.
 
-```ruby
-require 'kittn'
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get
-```
 
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get()
-```
+## Get All Policies
 
 ```shell
-curl "http://example.com/api/kittens"
-  -H "Authorization: meowmeowmeow"
+curl "https://nucleus.sh/app/:appId/policies"
+	-H "Authorization: your_access_token"
 ```
 
-```javascript
-const kittn = require('kittn');
+> The above command returns JSON structured like this (as an array):
 
-let api = kittn.authorize('meowmeowmeow');
-let kittens = api.kittens.get();
+```json
+[
+	{
+		"id": "basic",
+		"duration": "365",
+		"maxMachines": "5",
+		"version": "0.8.1"
+	},
+	{
+		"id": "lifetime",
+		"duration": "0",
+		"maxMachines": "0",
+		"version": "all"
+	}
+]
+```
+
+This endpoint retrieves all licenses.
+
+### HTTP Request
+
+`GET https://nucleus.sh/app/:appId/policies`
+
+
+
+
+## Create a policy
+
+### HTTP Request
+
+`POST https://nucleus.sh/app/:appId/policy`
+
+### Query Parameters
+
+Parameter | Optional | Description
+--------- | ------- | -----------
+id | required | The id of the new policy
+maxMachines | optional | Maximum number of machines the license will be allowed on (0 for no limits)
+versionValidity | optional | On which version should the license be working ('all' )
+durationValidity | optional | For how many days the licenses will be valid (0 for always)
+
+
+
+
+## Delete a policy
+
+### HTTP Request
+
+`DELETE https://nucleus.sh/app/:appId/policy/:policyId`
+
+
+
+# Licenses
+
+
+## Get All Licenses
+
+```shell
+curl "https://nucleus.sh/app/:appId/licenses"
+	-H "Authorization: your_access_token"
 ```
 
 > The above command returns JSON structured like this:
 
 ```json
 [
-  {
-    "id": 1,
-    "name": "Fluffums",
-    "breed": "calico",
-    "fluffiness": 6,
-    "cuteness": 7
-  },
-  {
-    "id": 2,
-    "name": "Max",
-    "breed": "unknown",
-    "fluffiness": 5,
-    "cuteness": 10
-  }
+	{
+		"id": "license_id",
+		"key": "eozUYGifqgoiZefjHDiz",
+		"status": "active",
+		"userEmail": "user@example.com",
+		"policy": "basic",
+		"created": "2018-02-13",
+		"expire": "0"
+	}
 ]
 ```
 
-This endpoint retrieves all kittens.
+This endpoint retrieves all licenses.
 
 ### HTTP Request
 
-`GET http://example.com/api/kittens`
+`GET https://nucleus.sh/app/:appId/licenses`
+
+<aside class="notice">
+You must replace <code>:appId</code> with your application id, available on your <a target='_blank' href='https://nucleus.sh/account'>dashboard</a>.
+</aside>
+
+
+
+
+## Create a license
+
+This is the main endpoint. It should be used on your server to create licenses for your users after they paid.
+
+### HTTP Request
+
+`POST https://nucleus.sh/app/:appId/licenses/`
 
 ### Query Parameters
 
-Parameter | Default | Description
+Parameter | Optional | Description
 --------- | ------- | -----------
-include_cats | false | If set to true, the result will also include cats.
-available | true | If set to false, the result will include kittens that have already been adopted.
+policy | required | The policy you want to apply to the license
+userEmail | optional | Email of the user who bought the license
 
-<aside class="success">
-Remember — a happy kitten is an authenticated kitten!
+
+
+
+## Get a license (and know if it's valid)
+
+```shell
+curl "https://nucleus.sh/app/:appId/license/:license"
+```
+
+> The above command returns JSON structured like this:
+
+```json
+{
+	"id": "license_id",
+	"key": "eozUYGifqgoiZefjHDiz",
+	"status": "active",
+	"userEmail": "user@example.com",
+	"policy": "basic",
+	"created": "2018-02-13",
+	"expire": "0"
+}
+```
+
+This is integrated directly in Nucleus's node module.
+This endpoint doesn't need authentification.
+
+
+### HTTP Request
+
+`GET https://nucleus.sh/app/:appId/license/:license`
+
+
+<aside class="notice">
+`:license` can either be directly the license or its id.
 </aside>
 
-## Get a Specific Kitten
 
-```ruby
-require 'kittn'
+## Update a Specific License
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get(2)
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get(2)
-```
-
-```shell
-curl "http://example.com/api/kittens/2"
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.get(2);
-```
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "id": 2,
-  "name": "Max",
-  "breed": "unknown",
-  "fluffiness": 5,
-  "cuteness": 10
-}
-```
-
-This endpoint retrieves a specific kitten.
-
-<aside class="warning">Inside HTML code blocks like this one, you can't use Markdown, so use <code>&lt;code&gt;</code> blocks to denote code.</aside>
+For now you can only modify it's `status` property
+This can be used to remotely disable a license.
 
 ### HTTP Request
 
-`GET http://example.com/kittens/<ID>`
+`PUT https://nucleus.sh/app/:appId/license/:licenseId`
 
-### URL Parameters
+### Query Parameters
 
-Parameter | Description
---------- | -----------
-ID | The ID of the kitten to retrieve
+Parameter | Optional | Description
+--------- | ------- | -----------
+status | optional | Set to `disabled` to disable the license or `active` to reenable it
 
-## Delete a Specific Kitten
 
-```ruby
-require 'kittn'
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.delete(2)
-```
+## Delete a Specific License
 
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.delete(2)
-```
-
-```shell
-curl "http://example.com/api/kittens/2"
-  -X DELETE
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.delete(2);
-```
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "id": 2,
-  "deleted" : ":("
-}
-```
-
-This endpoint deletes a specific kitten.
+Completely delete a license. It won't work anymore and won't show up in your dashboard.
+You should prefeer to disable it in case you want to re-use it later.
 
 ### HTTP Request
 
-`DELETE http://example.com/kittens/<ID>`
-
-### URL Parameters
-
-Parameter | Description
---------- | -----------
-ID | The ID of the kitten to delete
-
+`DELETE https://nucleus.sh/app/:appId/license/:licenseId`
